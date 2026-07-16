@@ -5,6 +5,14 @@ import DataTable, { type Column } from '@/components/ui/DataTable';
 import BarChart from '@/components/charts/BarChart';
 import { FormField, Input, Select } from '@/components/ui/FormField';
 import { formatCLP } from '@/lib/utils/formatCLP';
+import {
+  getUperGrossPrice,
+  getUperNetPrice,
+  getUperDiscount,
+  type UperModality,
+  type UperLevel,
+  type UperPack,
+} from '@/lib/utils/uperPricing';
 import { Plus, X, Check, CheckCircle2, Clock, Pencil, Trash2 } from 'lucide-react';
 import type { ClassSession, CreateClassInput } from '@/types';
 
@@ -23,6 +31,11 @@ interface ClassSummary {
 
 interface WeeklyIncome { week: string; income: number }
 
+function fmtWeek(yyyyWww: string) {
+  const m = yyyyWww.match(/^(\d{4})-W(\d+)$/);
+  return m ? `Sem ${+m[2]} (${m[1]})` : yyyyWww;
+}
+
 const EMPTY: CreateClassInput = {
   date: new Date().toISOString().substring(0, 10),
   student_name: '',
@@ -31,6 +44,10 @@ const EMPTY: CreateClassInput = {
   paid: 0,
   is_uper: 0,
   notes: '',
+  uper_modality: 'online',
+  uper_level: 'escolar',
+  uper_pack: 'suelta',
+  uper_gross_rate: 0,
 };
 
 // ── Student autocomplete ───────────────────────────────────────────────────────
@@ -47,12 +64,11 @@ function StudentAutocomplete({ value, students, onChange, onSelect }: StudentAut
   const containerRef = useRef<HTMLDivElement>(null);
 
   const matches = value.trim().length === 0
-    ? students                                                     // empty → show all past students
+    ? students
     : students.filter((s) =>
         s.student_name.toLowerCase().includes(value.toLowerCase())
       );
 
-  // Close on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -89,7 +105,7 @@ function StudentAutocomplete({ value, students, onChange, onSelect }: StudentAut
               <button
                 type="button"
                 onMouseDown={(e) => {
-                  e.preventDefault(); // prevent input blur before click registers
+                  e.preventDefault();
                   onSelect(s);
                   setOpen(false);
                 }}
@@ -108,19 +124,48 @@ function StudentAutocomplete({ value, students, onChange, onSelect }: StudentAut
   );
 }
 
+// ── Uper price preview ─────────────────────────────────────────────────────────
+
+interface UperPreviewProps {
+  gross: number;
+  net: number;
+  classNumber: number;
+  studentName: string;
+}
+
+function UperPreview({ gross, net, classNumber, studentName }: UperPreviewProps) {
+  if (!gross) return null;
+  const discount = getUperDiscount(classNumber);
+  return (
+    <div className="col-span-full bg-violet-50 border border-violet-200 rounded-lg px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+      <span className="text-violet-700">
+        <span className="font-medium">Alumno paga:</span> {formatCLP(gross)}
+      </span>
+      <span className="text-violet-900 font-semibold">
+        Tú recibes: {formatCLP(net)}
+      </span>
+      <span className="text-violet-500 text-xs self-center">
+        (descuento {formatCLP(discount)} · clase&nbsp;Nº&nbsp;{classNumber}
+        {studentName ? ` de ${studentName}` : ''})
+      </span>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClassesPage() {
   const currentMonth = new Date().toISOString().substring(0, 7);
 
-  const [classes,    setClasses]    = useState<ClassSession[]>([]);
-  const [summary,    setSummary]    = useState<ClassSummary | null>(null);
-  const [weeklyData, setWeeklyData] = useState<WeeklyIncome[]>([]);
-  const [students,   setStudents]   = useState<StudentDefaults[]>([]);
-  const [showForm,   setShowForm]   = useState(false);
-  const [editId,     setEditId]     = useState<number | null>(null);
-  const [form,       setForm]       = useState<CreateClassInput>(EMPTY);
-  const [uperOnly,   setUperOnly]   = useState(false);
+  const [classes,       setClasses]       = useState<ClassSession[]>([]);
+  const [summary,       setSummary]       = useState<ClassSummary | null>(null);
+  const [weeklyData,    setWeeklyData]    = useState<WeeklyIncome[]>([]);
+  const [students,      setStudents]      = useState<StudentDefaults[]>([]);
+  const [showForm,      setShowForm]      = useState(false);
+  const [editId,        setEditId]        = useState<number | null>(null);
+  const [form,          setForm]          = useState<CreateClassInput>(EMPTY);
+  const [uperOnly,      setUperOnly]      = useState(false);
+  const [uperClassNum,  setUperClassNum]  = useState<number>(1);
 
   const load = useCallback(async () => {
     const uper = uperOnly ? '&uper=1' : '';
@@ -137,6 +182,33 @@ export default function ClassesPage() {
   }, [currentMonth, uperOnly]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-calculate Uper net price whenever relevant fields change
+  useEffect(() => {
+    if (form.is_uper !== 1 || !form.student_name.trim()) return;
+
+    const params = new URLSearchParams({ summary: 'uper-count', student: form.student_name });
+    if (editId !== null) params.set('excludeId', String(editId));
+
+    fetch(`/api/classes?${params}`)
+      .then((r) => r.json())
+      .then(({ count }: { count: number }) => {
+        const classNumber = count + 1;
+        const modality = form.uper_modality as UperModality;
+        const level    = form.uper_level    as UperLevel;
+        const pack     = form.uper_pack     as UperPack;
+        const gross = getUperGrossPrice(modality, level, pack);
+        const net   = getUperNetPrice(modality, level, pack, classNumber);
+        setUperClassNum(classNumber);
+        setForm((prev) => ({
+          ...prev,
+          rate_per_hour:  net,
+          uper_gross_rate: gross,
+          duration_hours:  1,
+        }));
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.is_uper, form.student_name, form.uper_modality, form.uper_level, form.uper_pack, editId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +231,7 @@ export default function ClassesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      setForm({ ...EMPTY, date: form.date }); // keep date for back-to-back entries
+      setForm({ ...EMPTY, date: form.date });
     }
     setShowForm(false);
     load();
@@ -167,13 +239,17 @@ export default function ClassesPage() {
 
   const handleEdit = (s: ClassSession) => {
     setForm({
-      date:           s.date,
-      student_name:   s.student_name,
-      duration_hours: s.duration_hours,
-      rate_per_hour:  s.rate_per_hour,
-      paid:           s.paid,
-      is_uper:        s.is_uper,
-      notes:          s.notes,
+      date:            s.date,
+      student_name:    s.student_name,
+      duration_hours:  s.duration_hours,
+      rate_per_hour:   s.rate_per_hour,
+      paid:            s.paid,
+      is_uper:         s.is_uper,
+      notes:           s.notes,
+      uper_modality:   s.uper_modality || 'online',
+      uper_level:      s.uper_level    || 'escolar',
+      uper_pack:       s.uper_pack     || 'suelta',
+      uper_gross_rate: s.uper_gross_rate ?? 0,
     });
     setEditId(s.id);
     setShowForm(true);
@@ -197,9 +273,18 @@ export default function ClassesPage() {
   const columns: Column<ClassSession>[] = [
     { header: 'Fecha',  accessor: 'date' },
     { header: 'Alumno', accessor: 'student_name' },
-    { header: 'Horas',  accessor: (s) => `${s.duration_hours}h` },
-    { header: 'Tarifa', accessor: (s) => `${formatCLP(s.rate_per_hour)}/h` },
-    { header: 'Total',  accessor: (s) => formatCLP(s.duration_hours * s.rate_per_hour) },
+    {
+      header: 'Tarifa',
+      accessor: (s) => s.is_uper === 1 && s.uper_gross_rate > 0
+        ? (
+          <span className="text-xs leading-tight">
+            <span className="font-medium text-gray-900">{formatCLP(s.rate_per_hour)}</span>
+            <span className="text-gray-400"> / {formatCLP(s.uper_gross_rate)}</span>
+          </span>
+        )
+        : `${formatCLP(s.rate_per_hour)}/h`,
+    },
+    { header: 'Total', accessor: (s) => formatCLP(s.duration_hours * s.rate_per_hour) },
     {
       header: 'Estado',
       accessor: (s) => (
@@ -219,7 +304,15 @@ export default function ClassesPage() {
     {
       header: 'Uper',
       accessor: (s) => s.is_uper === 1
-        ? <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">Uper</span>
+        ? (
+          <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+            {[
+              s.uper_modality === 'online' ? '💻' : '🏠',
+              s.uper_level === 'universitario' ? 'Uni' : 'Esc',
+              s.uper_pack === 'pack4' ? 'P4' : s.uper_pack === 'pack8' ? 'P8' : 'Suelta',
+            ].filter(Boolean).join(' · ')}
+          </span>
+        )
         : null,
     },
     { header: 'Notas', accessor: 'notes' },
@@ -237,6 +330,8 @@ export default function ClassesPage() {
       ),
     },
   ];
+
+  const isUper = form.is_uper === 1;
 
   return (
     <div className="space-y-6">
@@ -267,10 +362,10 @@ export default function ClassesPage() {
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Clases',      value: String(summary.total_classes) },
-            { label: 'Horas',       value: `${summary.total_hours}h` },
-            { label: 'Cobrado',     value: formatCLP(summary.income_paid) },
-            { label: 'Por cobrar',  value: formatCLP(summary.income_pending) },
+            { label: 'Clases',     value: String(summary.total_classes) },
+            { label: 'Horas',      value: `${summary.total_hours}h` },
+            { label: 'Cobrado',    value: formatCLP(summary.income_paid) },
+            { label: 'Por cobrar', value: formatCLP(summary.income_pending) },
           ].map(({ label, value }) => (
             <Card key={label} className={uperOnly ? 'border-violet-200 bg-violet-50/40' : ''}>
               <p className="text-xs text-gray-500">
@@ -299,8 +394,8 @@ export default function ClassesPage() {
                 onSelect={(s) =>
                   setForm({
                     ...form,
-                    student_name:  s.student_name,
-                    rate_per_hour: s.rate_per_hour,
+                    student_name:   s.student_name,
+                    rate_per_hour:  s.rate_per_hour,
                     duration_hours: s.duration_hours,
                   })
                 }
@@ -316,27 +411,6 @@ export default function ClassesPage() {
               />
             </FormField>
 
-            <FormField label="Duración (horas)">
-              <Input
-                type="number"
-                min="0.5"
-                step="0.5"
-                value={form.duration_hours}
-                onChange={(e) => setForm({ ...form, duration_hours: Number(e.target.value) })}
-                required
-              />
-            </FormField>
-
-            <FormField label="Tarifa por hora (CLP)">
-              <Input
-                type="number"
-                min="1000"
-                value={form.rate_per_hour}
-                onChange={(e) => setForm({ ...form, rate_per_hour: Number(e.target.value) })}
-                required
-              />
-            </FormField>
-
             <FormField label="¿Pagado?">
               <Select
                 value={String(form.paid)}
@@ -347,19 +421,12 @@ export default function ClassesPage() {
               </Select>
             </FormField>
 
-            <FormField label="Notas">
-              <Input
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Tema de la clase"
-              />
-            </FormField>
-
-            <div className="flex items-center gap-2 self-end pb-2">
+            {/* Uper toggle */}
+            <div className="col-span-full flex items-center gap-2">
               <input
                 id="is_uper"
                 type="checkbox"
-                checked={form.is_uper === 1}
+                checked={isUper}
                 onChange={(e) => setForm({ ...form, is_uper: e.target.checked ? 1 : 0 })}
                 className="w-4 h-4 accent-violet-600 cursor-pointer"
               />
@@ -367,6 +434,82 @@ export default function ClassesPage() {
                 Clase de <span className="font-medium text-violet-600">Uper</span>
               </label>
             </div>
+
+            {/* Uper-specific fields */}
+            {isUper ? (
+              <>
+                <FormField label="Modalidad">
+                  <Select
+                    value={form.uper_modality}
+                    onChange={(e) => setForm({ ...form, uper_modality: e.target.value })}
+                  >
+                    <option value="online">💻 Online</option>
+                    <option value="presencial">🏠 Presencial</option>
+                  </Select>
+                </FormField>
+
+                <FormField label="Nivel">
+                  <Select
+                    value={form.uper_level}
+                    onChange={(e) => setForm({ ...form, uper_level: e.target.value })}
+                  >
+                    <option value="escolar">Escolar</option>
+                    <option value="universitario">Universitario</option>
+                  </Select>
+                </FormField>
+
+                <FormField label="Pack">
+                  <Select
+                    value={form.uper_pack}
+                    onChange={(e) => setForm({ ...form, uper_pack: e.target.value })}
+                  >
+                    <option value="suelta">Clase suelta</option>
+                    <option value="pack4">Pack 4</option>
+                    <option value="pack8">Pack 8</option>
+                  </Select>
+                </FormField>
+
+                {form.uper_gross_rate > 0 && (
+                  <UperPreview
+                    gross={form.uper_gross_rate}
+                    net={form.rate_per_hour}
+                    classNumber={uperClassNum}
+                    studentName={form.student_name}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <FormField label="Duración (horas)">
+                  <Input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={form.duration_hours}
+                    onChange={(e) => setForm({ ...form, duration_hours: Number(e.target.value) })}
+                    required
+                  />
+                </FormField>
+
+                <FormField label="Tarifa por hora (CLP)">
+                  <Input
+                    type="number"
+                    min="1000"
+                    value={form.rate_per_hour}
+                    onChange={(e) => setForm({ ...form, rate_per_hour: Number(e.target.value) })}
+                    required
+                  />
+                </FormField>
+              </>
+            )}
+
+            <FormField label="Notas">
+              <Input
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Tema de la clase"
+              />
+            </FormField>
 
             <div className="col-span-full flex justify-end">
               <button
@@ -399,7 +542,7 @@ export default function ClassesPage() {
             Ingresos por clases — últimas 4 semanas
           </h2>
           <BarChart
-            labels={weeklyData.map((w) => w.week)}
+            labels={weeklyData.map((w) => fmtWeek(w.week))}
             datasets={[{ name: 'Ingresos', values: weeklyData.map((w) => w.income), color: '#2563eb' }]}
             height={260}
           />

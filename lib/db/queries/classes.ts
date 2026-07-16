@@ -48,6 +48,18 @@ export function getClassById(id: number): ClassSession | undefined {
   return getDb().prepare('SELECT * FROM classes WHERE id = ?').get(id) as ClassSession | undefined;
 }
 
+export function getStudentUperClassCount(studentName: string, excludeId?: number): number {
+  const db = getDb();
+  if (excludeId !== undefined) {
+    return (db.prepare(
+      'SELECT COUNT(*) as cnt FROM classes WHERE student_name = ? AND is_uper = 1 AND id != ?'
+    ).get(studentName, excludeId) as { cnt: number }).cnt;
+  }
+  return (db.prepare(
+    'SELECT COUNT(*) as cnt FROM classes WHERE student_name = ? AND is_uper = 1'
+  ).get(studentName) as { cnt: number }).cnt;
+}
+
 export function createClass(input: CreateClassInput): ClassSession {
   const db = getDb();
 
@@ -59,8 +71,10 @@ export function createClass(input: CreateClassInput): ClassSession {
 
   const { lastInsertRowid } = db
     .prepare(
-      `INSERT INTO classes (date, student_name, duration_hours, rate_per_hour, paid, is_uper, notes, transaction_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO classes
+         (date, student_name, duration_hours, rate_per_hour, paid, is_uper, notes, transaction_id,
+          uper_modality, uper_level, uper_pack, uper_gross_rate)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.date,
@@ -70,7 +84,11 @@ export function createClass(input: CreateClassInput): ClassSession {
       input.paid,
       input.is_uper,
       input.notes,
-      transactionId
+      transactionId,
+      input.uper_modality ?? '',
+      input.uper_level ?? '',
+      input.uper_pack ?? '',
+      input.uper_gross_rate ?? 0,
     );
   return getClassById(lastInsertRowid as number)!;
 }

@@ -6,11 +6,7 @@ import { FormField, Input, Select } from '@/components/ui/FormField';
 import { formatCLP } from '@/lib/utils/formatCLP';
 import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
 import type { Transaction, CreateTransactionInput, TransactionCategory, TransactionType } from '@/types';
-
-const CATEGORIES: TransactionCategory[] = [
-  'alimentación','transporte','arriendo','servicios',
-  'salud','educación','entretenimiento','otros',
-];
+import { CATEGORY_GROUPS } from '@/lib/config/categoryGroups';
 
 const EMPTY_FORM: CreateTransactionInput = {
   date: new Date().toISOString().substring(0, 10),
@@ -171,7 +167,11 @@ export default function TransactionsPage() {
             </FormField>
             <FormField label="Categoría">
               <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TransactionCategory })}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {CATEGORY_GROUPS.map(({ group, categories }) => (
+                  <optgroup key={group} label={group}>
+                    {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </optgroup>
+                ))}
               </Select>
             </FormField>
             <FormField label="Descripción">
@@ -209,7 +209,11 @@ export default function TransactionsPage() {
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CATEGORY_GROUPS.map(({ group, categories }) => (
+            <optgroup key={group} label={group}>
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </optgroup>
+          ))}
         </select>
         <select
           value={filterType}

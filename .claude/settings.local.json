@@ -1,7 +1,29 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node -e ' *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/ --max-time 3)",
+      "Bash(which chromium-cli *)",
+      "Read(//c/Users/User/AppData/Local/Temp/claude/**)",
+      "Bash(find / -maxdepth 6 -iname \"*chromium-cli*\" 2>/dev/null; echo \"---\"; type chromium-cli 2>&1)",
+      "Read(//c//**)",
+      "Bash(node -e \"console.log\\(require.resolve\\('playwright'\\)\\)\")",
+      "Bash(npx --yes playwright --version)",
+      "Bash(curl -s http://localhost:3001/transactions -o /tmp/tx.html --max-time 15)",
+      "Bash(curl -s http://localhost:3001/ -o /tmp/dash.html --max-time 15)",
+      "Bash(curl -s \"http://localhost:3001/api/transactions?summary=categories&month=2026-05\" --max-time 10)",
+      "Bash(curl -s \"http://localhost:3001/api/transactions?summary=categories&month=2026-07\" --max-time 10)",
+      "Bash(netstat -ano)",
+      "Bash(wmic process *)",
+      "Bash(taskkill //PID 26260 //F)",
+      "Bash(taskkill //PID 27088 //F)",
+      "Bash(curl -s -o /tmp/root.html -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/ --max-time 10)",
+      "Bash(taskkill //PID 24848 //F)"
     ]
   }
 }

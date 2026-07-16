@@ -18,7 +18,7 @@ const BASE_LAYOUT: Partial<Layout> = {
   font: { family: 'Inter, sans-serif', color: '#374151' },
   margin: { t: 24, r: 16, b: 48, l: 64 },
   legend: { orientation: 'h', y: -0.2 },
-  xaxis: { showgrid: false, tickfont: { size: 11 } },
+  xaxis: { showgrid: false, tickfont: { size: 11 }, type: 'category' },
   yaxis: { gridcolor: '#f3f4f6', tickfont: { size: 11 } },
 };
 

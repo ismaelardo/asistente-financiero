@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Consulta lógica de precios – Uper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      color: #1a1a2e;
+      background: #fff;
+      padding: 40px 48px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 3px solid #4f46e5;
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      color: #4f46e5;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: #666;
+      font-size: 13px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+      padding-left: 10px;
+      border-left: 4px solid #4f46e5;
+    }
+
+    section {
+      margin-bottom: 28px;
+    }
+
+    p {
+      line-height: 1.6;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    th {
+      background: #4f46e5;
+      color: #fff;
+      padding: 9px 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 8px 12px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tr:nth-child(even) td {
+      background: #f5f5ff;
+    }
+
+    td:first-child {
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .tag-online  { color: #0369a1; font-weight: 600; }
+    .tag-presencial { color: #065f46; font-weight: 600; }
+
+    .discount-table td:first-child {
+      text-align: center;
+      font-weight: normal;
+    }
+
+    .highlight {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    .example-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+
+    .example-block h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4f46e5;
+      margin-bottom: 10px;
+    }
+
+    .pregunta-box {
+      background: #eff6ff;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+
+    .pregunta-box h2 {
+      border-left-color: #3b82f6;
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+
+    .pregunta-box p {
+      color: #1e3a8a;
+      font-size: 14px;
+    }
+
+    .opciones {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .opcion {
+      flex: 1;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: #fff;
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .opcion strong {
+      display: block;
+      font-size: 13px;
+      color: #1e40af;
+      margin-bottom: 4px;
+    }
+
+    footer {
+      margin-top: 36px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 14px;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+
+    @media print {
+      body { padding: 20px 28px; }
+      .opciones { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Consulta: Lógica de precios y comisiones – Uper</h1>
+    <p>Para revisión de Felipe &nbsp;|&nbsp; Junio 2026</p>
+  </header>
+
+  <!-- SECCIÓN 1: PRECIOS BASE -->
+  <section>
+    <h2>1. Precios por clase (lo que paga el alumno)</h2>
+    <p>Entiendo que los valores indicados son el precio <strong>por clase</strong>, no el total del pack.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Modalidad / Nivel</th>
+          <th>Clase suelta</th>
+          <th>Pack 4 clases</th>
+          <th>Pack 8 clases</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag-online">💻 Online</span> – Escolar</td>
+          <td>$16.000</td>
+          <td>$14.000</td>
+          <td>$13.000</td>
+        </tr>
+        <tr>
+          <td><span class="tag-online">💻 Online</span> – Universitario</td>
+          <td>$18.000</td>
+          <td>$16.000</td>
+          <td>$15.000</td>
+        </tr>
+        <tr>
+          <td><span class="tag-presencial">🏠 Presencial</span> – Escolar</td>
+          <td>$20.000</td>
+          <td>$18.000</td>
+          <td>$17.000</td>
+        </tr>
+        <tr>
+          <td><span class="tag-presencial">🏠 Presencial</span> – Universitario</td>
+          <td>$22.000</td>
+          <td>$20.000</td>
+          <td>$19.000</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECCIÓN 2: DESCUENTO POR FIDELIDAD -->
+  <section>
+    <h2>2. Lo que me quedo yo (descuento por clase acumulada del alumno)</h2>
+    <p>Al precio que paga el alumno se le descuenta un monto según cuántas clases lleva ese alumno conmigo en total:</p>
+
+    <table class="discount-table">
+      <thead>
+        <tr>
+          <th>N° de clase del alumno</th>
+          <th>Descuento</th>
+          <th>Fórmula</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1ra y 2da clase</td>
+          <td>– $5.000</td>
+          <td>Precio alumno − $5.000</td>
+        </tr>
+        <tr>
+          <td>3ra clase</td>
+          <td>– $4.000</td>
+          <td>Precio alumno − $4.000</td>
+        </tr>
+        <tr>
+          <td>4ta clase</td>
+          <td>– $3.000</td>
+          <td>Precio alumno − $3.000</td>
+        </tr>
+        <tr>
+          <td>5ta clase</td>
+          <td>– $2.000</td>
+          <td>Precio alumno − $2.000</td>
+        </tr>
+        <tr>
+          <td>6ta clase en adelante</td>
+          <td>– $1.000</td>
+          <td>Precio alumno − $1.000</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      El contador de clases es <strong>por alumno</strong>, independiente del tipo de clase o pack que haya contratado.
+    </div>
+  </section>
+
+  <!-- SECCIÓN 3: EJEMPLO -->
+  <section>
+    <h2>3. Ejemplo práctico</h2>
+    <div class="example-block">
+      <h3>Alumno nuevo → Pack 4 / Online / Universitario ($16.000/clase)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Clase</th>
+            <th>Precio alumno</th>
+            <th>Descuento</th>
+            <th>Me quedo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1ra</td><td>$16.000</td><td>$5.000</td><td><strong>$11.000</strong></td></tr>
+          <tr><td>2da</td><td>$16.000</td><td>$5.000</td><td><strong>$11.000</strong></td></tr>
+          <tr><td>3ra</td><td>$16.000</td><td>$4.000</td><td><strong>$12.000</strong></td></tr>
+          <tr><td>4ta</td><td>$16.000</td><td>$3.000</td><td><strong>$13.000</strong></td></tr>
+        </tbody>
+      </table>
+
+      <br/>
+      <h3>El mismo alumno → Pack 8 / Online / Universitario ($15.000/clase)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Clase</th>
+            <th>Precio alumno</th>
+            <th>Descuento</th>
+            <th>Me quedo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>5ta</td><td>$15.000</td><td>$2.000</td><td><strong>$13.000</strong></td></tr>
+          <tr><td>6ta en adelante</td><td>$15.000</td><td>$1.000</td><td><strong>$14.000</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 4: PREGUNTA -->
+  <section class="pregunta-box">
+    <h2>Pregunta para Felipe</h2>
+    <p>El contador de clases que determina el descuento, ¿es acumulado por alumno independiente del pack o modalidad que contrate?</p>
+
+    <div class="opciones">
+      <div class="opcion">
+        <strong>Opción A – Contador global por alumno</strong>
+        El número de clase sigue corriendo sin importar si el alumno cambia de pack (suelta → pack 4 → pack 8) o cambia de modalidad (online → presencial). El descuento depende solo de cuántas clases totales lleva con el profesor.
+      </div>
+      <div class="opcion">
+        <strong>Opción B – Otro criterio</strong>
+        El contador se reinicia o se calcula de otra forma (por pack, por tipo de clase, etc.).
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Documento generado para revisión interna &nbsp;|&nbsp; Asistente Financiero Uper
+  </footer>
+
+</body>
+</html>

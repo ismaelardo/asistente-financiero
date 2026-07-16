@@ -70,6 +70,10 @@ export function initializeSchema(db: Database.Database): void {
   const migrations = [
     'ALTER TABLE classes ADD COLUMN transaction_id INTEGER',
     'ALTER TABLE classes ADD COLUMN is_uper INTEGER DEFAULT 0',
+    "ALTER TABLE classes ADD COLUMN uper_modality TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE classes ADD COLUMN uper_level TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE classes ADD COLUMN uper_pack TEXT NOT NULL DEFAULT ''",
+    'ALTER TABLE classes ADD COLUMN uper_gross_rate INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* column already exists */ }

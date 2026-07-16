@@ -1,12 +1,20 @@
 export type TransactionCategory =
   | 'alimentación'
+  | 'comida fuera'
   | 'transporte'
   | 'arriendo'
   | 'servicios'
+  | 'suscripciones'
   | 'salud'
   | 'educación'
-  | 'entretenimiento'
+  | 'desarrollo personal'
+  | 'entretenimiento sano'
+  | 'alcohol y cigarros'
+  | 'pensiones y gastos hijos'
+  | 'mejoras'
   | 'otros';
+
+export type CategoryTier = 'esencial' | 'discrecional';
 
 export type TransactionType = 'income' | 'expense';
 
@@ -43,6 +51,10 @@ export interface ClassSession {
   notes: string;
   created_at: string;
   transaction_id: number | null;
+  uper_modality: string;
+  uper_level: string;
+  uper_pack: string;
+  uper_gross_rate: number;
 }
 
 export type IncomeSourceType = 'classes' | 'job' | 'freelance' | 'workshop';

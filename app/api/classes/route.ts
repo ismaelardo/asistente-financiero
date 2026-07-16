@@ -6,6 +6,7 @@ import {
   getMonthlyClassSummary,
   getWeeklyClassIncome,
   getUniqueStudents,
+  getStudentUperClassCount,
 } from '@/lib/db/queries/classes';
 import type { CreateClassInput } from '@/types';
 
@@ -22,6 +23,11 @@ export function GET(request: NextRequest) {
   }
   if (p.get('summary') === 'students') {
     return NextResponse.json(getUniqueStudents());
+  }
+  if (p.get('summary') === 'uper-count') {
+    const student   = p.get('student') ?? '';
+    const excludeId = p.get('excludeId') ? Number(p.get('excludeId')) : undefined;
+    return NextResponse.json({ count: getStudentUperClassCount(student, excludeId) });
   }
 
   const start = p.get('start');
